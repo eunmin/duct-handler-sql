@@ -1,0 +1,32 @@
+{:duct.core/project-ns  duct-handler-sql
+ :duct.core/environment :production
+
+ :duct.module/logging {}
+ :duct.module.web/api {}
+ :duct.module/sql {}
+
+ :duct.module/ataraxy
+ {[:get "/"] [:index]
+  [:get "/entries"] [:entries/list]
+  [:post "/entries" {{:keys [description]} :body-params}] [:entries/create description]
+  [:get "/example"] [:example]}
+
+ [:duct.handler.static/ok :duct-handler-sql.handler/index]
+ {:body {:entries "/entries"}}
+
+ [:duct.handler.sql/query :duct-handler-sql.handler.entries/list]
+ {:sql ["SELECT * FROM entries"]}
+
+ [:duct.handler.sql/insert :duct-handler-sql.handler.entries/create]
+ {:request {[_ description] :ataraxy/result}
+  :sql     ["INSERT INTO entries (description) VALUES (?)" description]}
+
+ :duct-handler-sql.handler/example
+ {:db #ig/ref :duct.database/sql}
+
+ :duct.migrator/ragtime
+ {:migrations [#ig/ref :duct-handler-sql.migration/create-entries]}
+
+ [:duct.migrator.ragtime/sql :duct-handler-sql.migration/create-entries]
+ {:up ["CREATE TABLE entries (id INTEGER PRIMARY KEY, description TEXT)"]
+  :down ["DROP TABLE entries"]}}
